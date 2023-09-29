@@ -21,7 +21,10 @@ connection.connect((err) => {
     console.log('Connected to MySQL database');
 });
 
-app.use(cors());        // Avoid CORS errors in browsers
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));        // Avoid CORS errors in browsers
 app.use(express.json()) // Populate req.body
 
 let validSessions = []
@@ -51,11 +54,11 @@ const main = () => {
     app.use(session({
         secret: 'GJeoeJJASwww',
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
         cookie: {secure: false, maxAge: 60 * 30 * 1000} // session limited to 30 minutes
     }))
 
-    app.get('/users', (req, res) => {
+    app.post('/login', (req, res) => {
         let returnId = -1;
         if (req.body.password) {
             let passWord = req.body.password;
