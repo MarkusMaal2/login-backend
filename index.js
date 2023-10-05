@@ -54,7 +54,7 @@ const main = () => {
     app.use(session({
         secret: 'GJeoeJJASwww',
         resave: false,
-        saveUninitialized: false,
+        saveUninitialized: true,
         cookie: {secure: false, maxAge: 60 * 30 * 1000} // session limited to 30 minutes
     }))
 
