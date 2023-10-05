@@ -73,6 +73,7 @@ const main = () => {
         if (returnId > 0) {
             if (!validSessions.includes(req.sessionID)) {
                 validSessions.push(req.sessionID);
+                console.log(validSessions);
                 req.session.user = users[req.params.id - 1];
                 res.status(200).send({...users[returnId - 1], token: req.sessionID});
             } else {
@@ -147,6 +148,18 @@ const main = () => {
             res.status(204).end();
         } else {
             res.status(401).send({error: "Invalid credentials"})
+        }
+    })
+
+    app.get("/isloggedin/:sessionID", (req, res) => {
+        console.log(req.params.sessionID);
+        console.log(validSessions);
+        if (validSessions.includes(req.params.sessionID.toString())) {
+            console.log("logged in");
+            res.status(204).end();
+        } else {
+            console.log("logged out");
+            res.status(401).send({error: "Not logged in"})
         }
     })
 
