@@ -59,23 +59,23 @@ const main = () => {
     }))
 
     app.post('/login', (req, res) => {
-        let returnId = -1;
+        let returnUser = {};
         if (req.body.password) {
             let passWord = req.body.password;
             users.forEach((user) => {
                 let userName = user.name;
                 let hash = user.hash;
                 if (createHash('sha256').update(userName + salt + passWord).digest('hex') === hash) {
-                    returnId = user.id;
+                    returnUser = user;
                 }
             })
         }
-        if (returnId > 0) {
+        if (returnUser !== {}) {
             if (!validSessions.includes(req.sessionID)) {
                 validSessions.push(req.sessionID);
                 console.log(validSessions);
-                req.session.user = users[req.params.id - 1];
-                res.status(200).send({...users[returnId - 1], token: req.sessionID});
+                req.session.user = returnUser;
+                res.status(200).send({...returnUser, token: req.sessionID});
             } else {
                 res.status(400).send({error: "The session is already active. Please log out to log in."})
             }
@@ -111,6 +111,7 @@ const main = () => {
             return res.status(400).send({error: 'One or all params are missing'})
         }
         let exists = false;
+        console.log(users);
         users.forEach((user) => {
             if (user.name === req.body.name) {
                 console.log("User already exists!");
