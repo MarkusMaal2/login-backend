@@ -60,20 +60,22 @@ const main = () => {
 
     app.post('/login', (req, res) => {
         let returnUser = {};
+        let allowLogin = false;
         if (req.body.password) {
             let passWord = req.body.password;
             users.forEach((user) => {
                 let userName = user.name;
                 let hash = user.hash;
-                if (createHash('sha256').update(userName + salt + passWord).digest('hex') === hash) {
+                let compHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex')
+                if ((compHash === hash)) {
                     returnUser = user;
+                    allowLogin = true;
                 }
             })
         }
-        if (returnUser !== {}) {
+        if (allowLogin) {
             if (!validSessions.includes(req.sessionID)) {
                 validSessions.push(req.sessionID);
-                console.log(validSessions);
                 req.session.user = returnUser;
                 res.status(200).send({...returnUser, token: req.sessionID});
             } else {
@@ -140,7 +142,16 @@ const main = () => {
     })
 
     app.delete('/users/:id', (req, res) => {
-        if (typeof users[req.params.id - 1] === 'undefined') {
+        let searchUser = {};
+        let searchIndex = 0;
+        users.forEach((user) => {
+            if (user.id === req.params.id - 1) {
+                searchUser = user;
+            } else {
+                searchIndex++;
+            }
+        })
+        if (searchUser === {}) {
             return res.status(404).send({error: "User not found"})
         }
         let validId = validSessions.includes(req.sessionID);
@@ -153,7 +164,7 @@ const main = () => {
                     res.status(500).end();
                     return;
                 }
-                users.splice(req.params.id - 1, 1);
+                users.splice(searchIndex - 1, 1);
                 validSessions.splice(validSessions.indexOf(req.sessionID), 1)
                 res.status(204).end();
             });
