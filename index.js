@@ -110,6 +110,16 @@ const main = () => {
         if (!req.body.name || !req.body.password) {
             return res.status(400).send({error: 'One or all params are missing'})
         }
+        let exists = false;
+        users.forEach((user) => {
+            if (user.name === req.body.name) {
+                console.log("User already exists!");
+                exists = true;
+            }
+        })
+        if (exists) {
+            return res.status(409).send({error: "The specified user already exists"});
+        }
         let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
         users.push({
             id: users.length + 1,
