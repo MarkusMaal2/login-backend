@@ -132,21 +132,24 @@ const main = () => {
         if (typeof users[req.params.id - 1] === 'undefined') {
             return res.status(404).send({error: "User not found"})
         }
-        let returnId = -1;
-        if (req.body.password) {
-            let passWord = req.body.password;
-            users.forEach((user) => {
-                let userName = user.name;
-                let hash = user.hash;
-                if (createHash('sha256').update(userName + salt + passWord).digest('hex') === hash) {
-                    returnId = user.id;
+        let validId = validSessions.includes(req.sessionID);
+        if (validId) {
+            const query = 'DELETE FROM users WHERE id = ' + req.params.id;
+
+            connection.query(query, (err, results) => {
+                if (err) {
+                    console.error('Error executing query:', err);
+                    res.status(500).end();
+                    return;
                 }
-            })
-        }
-        if (returnId === req.params.id) {
-            users.splice(req.params.id - 1, 1);
-            res.status(204).end();
+                users.splice(req.params.id - 1, 1);
+                validSessions.splice(validSessions.indexOf(req.sessionID), 1)
+                res.status(204).end();
+            });
         } else {
+            console.log("Invalid credentials");
+            console.log("ID: " + req.params.id);
+            console.log("sessionID: " + req.sessionID);
             res.status(401).send({error: "Invalid credentials"})
         }
     })
