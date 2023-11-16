@@ -59,7 +59,7 @@ const log = (time, user, task) => {
     const filePath = "./server.log"
     const content = "[" + time + "] " + user + " - " + task;
     fs.appendFile(filePath, content, (err) => {
-        console.log("[" + time + "] Server logging error - " + err.message);
+        console.log("[" + time + "] Server logging error - " + err);
     })
     console.log(content);
 }
