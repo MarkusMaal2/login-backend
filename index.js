@@ -16,10 +16,10 @@ const connection = mysql.createConnection({
 
 connection.connect((err) => {
     if (err) {
-        console.error('Error connecting to MySQL:', err);
+        log(time(), "Server", 'Error connecting to MySQL:' + err, true);
         return;
     }
-    console.log('Connected to MySQL database');
+    log(time(), "Server", 'Connected to MySQL database');
 });
 
 app.use(cors({
@@ -54,20 +54,25 @@ const time = () => {
     return new Date().toLocaleString()
 }
 
-const log = (time, user, task) => {
+const session_user = (req) => {
+    return req.session?req.session.user?req.session.user.name:"Anonymous":"Anonymous";
+}
+
+const log = (time, user, task, error = false) => {
     const fs = require('fs')
     const filePath = "./server.log"
     const content = "[" + time + "] " + user + " - " + task;
-    fs.appendFile(filePath, content, (err) => {
+    fs.appendFile(filePath, content + "\n", (err) => {
         if (err) {
-            console.log("[" + time + "] Server logging error - " + err);
+            console.log("\x1b[0m[" + time + "] Server logging error - " + err + "\n");
         }
     })
-    console.log(content);
+    !error?console.log(content):console.error("\x1b[31m" + content + "\x1b[0m");
 }
 
 const main = () => {
-    console.log(users);
+    //console.log(users);
+    log(time(), "Server", "Found " + String(users.length) + " users in the database");
     app.use(session({
         secret: 'GJeoeJJASwww',
         resave: false,
@@ -95,21 +100,21 @@ const main = () => {
             if (!validSessions.includes(req.sessionID)) {
                 validSessions.push(req.sessionID);
                 req.session.user = returnUser;
-                log(time(), returnUser.name, "Session started");
+                log(time(), req.body.name, "Session started");
                 res.status(200).send({...returnUser, token: req.sessionID});
             } else {
-                log(time(), returnUser.name, "Cannot log in - session already active");
+                log(time(), req.body.name, "Cannot log in - session already active", true);
                 res.status(400).send({error: "The session is already active. Please log out to log in."})
             }
         } else {
-            if (!allowLogin) { log(time(), "Anonymous", "Authentication failed"); }
+            if (!allowLogin) { log(time(), req.body.name, "Authentication failed", true); }
             res.status(401).send({error: "Invalid credentials"})
         }
     })
 
     app.get('/users/:id', (req, res) => {
         if (typeof users[req.params.id - 1] === 'undefined') {
-            log(time(), "Anonymous", "Couldn't find a user with ID of " + req.params.id);
+            log(time(), "Anonymous", "Couldn't find a user with ID of " + req.params.id, true);
             return res.status(404).send({error: "User not found"})
         }
         if (req.body.password) {
@@ -129,22 +134,20 @@ const main = () => {
             log(time(), userName, "User found");
             res.send({...users[req.params.id - 1], token: req.sessionID})
         } else {
-            log(time(), userName, "Missing credentials");
+            log(time(), userName, "Missing credentials", true);
             res.status(401).send({error: "Missing credentials"})
         }
     })
 
     app.post('/users', (req, res) => {
         if (!req.body.name || !req.body.password) {
-            log(time(), "Anonymous", "Missing parameters");
+            log(time(), "Anonymous", "Missing parameters", true);
             return res.status(400).send({error: 'One or all params are missing'})
         }
         let exists = false;
-        console.log(users);
         users.forEach((user) => {
             if (user.name === req.body.name) {
-                log(time(), user.name, "Tried to create account, but user already exists");
-                console.log("User already exists!");
+                log(time(), user.name, "Tried to create account, but user already exists", true);
                 exists = true;
             }
         })
@@ -157,16 +160,17 @@ const main = () => {
             name: req.body.name,
             hash: newHash,
         })
+        log(time(), req.body.name, 'Created user');
         const query = `INSERT INTO USERS (NAME, HASH) VALUES ("${req.body.name}", "${newHash}")`;
 
         connection.query(query, (err, results) => {
             if (err) {
-                log(time(), req.body.name, 'Error executing query:', err);
-                console.error('Error executing query:', err);
+                log(time(), req.body.name, 'Error executing query:' + err, true);
                 res.status(500).send('Error modifying MySQL data');
                 return;
             }
             res.send(users[users.length - 1])
+            log(time(), req.body.name, 'User added to database');
         });
     })
 
@@ -181,7 +185,7 @@ const main = () => {
             }
         })
         if (searchUser === {}) {
-            log(time(), "Anonymous", 'Couldn\'t find user with ID of ' + req.params.id);
+            log(time(), session_user(req), 'Couldn\'t find user with ID of ' + req.params.id, true);
             return res.status(404).send({error: "User not found"})
         }
         let validId = validSessions.includes(req.sessionID);
@@ -190,35 +194,32 @@ const main = () => {
 
             connection.query(query, (err, results) => {
                 if (err) {
-                    log(time(), "Anonymous", 'Error executing query: ' + err);
-                    console.error('Error executing query:', err);
+                    log(time(), session_user(req), 'Error executing query: ' + err, true);
                     res.status(500).end();
                     return;
                 }
                 users.splice(searchIndex - 1, 1);
                 validSessions.splice(validSessions.indexOf(req.sessionID), 1)
-                log(time(), "Anonymous", 'Deleted user with Session ID of ' + req.sessionID);
+                log(time(), session_user(req), 'Deleted user with Session ID of ' + req.sessionID);
                 res.status(204).end();
             });
         } else {
-            console.log("Invalid credentials");
-            console.log("ID: " + req.params.id);
-            console.log("sessionID: " + req.sessionID);
-            log(time(), "Anonymous", 'Invalid credentials for session ' + req.sessionID);
+            //console.log("Invalid credentials");
+            //console.log("ID: " + req.params.id);
+            //console.log("sessionID: " + req.sessionID);
+            log(time(), session_user(req), 'Invalid credentials for session ' + req.sessionID, true);
             res.status(401).send({error: "Invalid credentials"})
         }
     })
 
     app.get("/isloggedin/:sessionID", (req, res) => {
-        console.log(req.params.sessionID);
-        console.log(validSessions);
+        //console.log(req.params.sessionID);
+        //console.log(validSessions);
         if (validSessions.includes(req.params.sessionID.toString())) {
-            log(time(), req.session.user, 'User is logged in');
-            console.log("logged in");
+            log(time(), session_user(req), 'User is logged in');
             res.status(204).end();
         } else {
             log(time(), "Anonymous", 'User is not logged in');
-            console.log("logged out");
             res.status(401).send({error: "Not logged in"})
         }
     })
@@ -230,15 +231,18 @@ const main = () => {
             for (let i = 0; i < validSessions.length; i++) {
                 if (validSessions[i] === req.sessionID) {
                     erasedToken = validSessions[i];
-                    erasedUserObject = req.session.user;
+                    erasedUserObject = session_user(req);
                     validSessions.splice(i, 1)
                 }
             }
-            log(time(), req.session.user, 'Logging out');
+            log(time(), session_user(req), 'Destroying session');
             res.status(200).send({...erasedUserObject, token: erasedToken})
             req.session.destroy();
         } else {
-            log(time(), req.session.user??"Anonymous", 'Invalid session token');
+            log(time(), session_user(req), 'Invalid session token', true);
+            if (req.session) {
+                req.session.destroy();
+            }
             res.status(400).send({error: "Invalid session token"})
         }
     })
