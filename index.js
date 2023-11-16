@@ -231,11 +231,12 @@ const main = () => {
             for (let i = 0; i < validSessions.length; i++) {
                 if (validSessions[i] === req.sessionID) {
                     erasedToken = validSessions[i];
-                    erasedUserObject = session_user(req);
+                    erasedUserObject = req.session.user;
                     validSessions.splice(i, 1)
                 }
             }
             log(time(), session_user(req), 'Destroying session');
+            console.log({...erasedUserObject, token: erasedToken});
             res.status(200).send({...erasedUserObject, token: erasedToken})
             req.session.destroy();
         } else {
