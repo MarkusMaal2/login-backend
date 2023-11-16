@@ -36,7 +36,7 @@ const salt = "#ALLLL24"
 let users = [
 ]
 
-const query = 'SELECT * FROM users';
+const query = 'SELECT * FROM USERS';
 
 connection.query(query, (err, results) => {
     if (err) {
@@ -184,7 +184,7 @@ const main = () => {
         }
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = 'DELETE FROM users WHERE id = ' + req.params.id;
+            const query = 'DELETE FROM USERS WHERE id = ' + req.params.id;
 
             connection.query(query, (err, results) => {
                 if (err) {
