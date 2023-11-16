@@ -4,7 +4,6 @@ const { createHash } = require('crypto');
 const session = require("express-session");
 const app = express();
 
-const fs = require('fs')
 
 const mysql = require('mysql2');
 
@@ -56,10 +55,13 @@ const time = () => {
 }
 
 const log = (time, user, task) => {
+    const fs = require('fs')
     const filePath = "./server.log"
     const content = "[" + time + "] " + user + " - " + task;
     fs.appendFile(filePath, content, (err) => {
-        console.log("[" + time + "] Server logging error - " + err);
+        if (err) {
+            console.log("[" + time + "] Server logging error - " + err);
+        }
     })
     console.log(content);
 }
