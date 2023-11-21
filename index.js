@@ -264,6 +264,8 @@ const main = () => {
                     name: req.body.name,
                     hash: newHash
                 })
+                users[users.length - 1].name = req.body.name
+                users[users.length - 1].hash = newHash
                 log(time(), req.body.name, 'Updated user details');
             });
         } else {
