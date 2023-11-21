@@ -115,3 +115,30 @@ DELETE /users/:id
 
 Response
 204: No content
+
+### 6. Update user info
+
+- **Endpoint:** `/users/:id`
+- **Method:** `PUT`
+- **Description:** Allows you to modify existing user data
+
+Request
+`
+PUT /users/:id
+Content-Type: application/json
+
+{
+"name": "<new username>",
+"password": "<new password>",
+}
+`
+
+
+Response
+`
+{
+"id": <user ID>,
+"name": "<new username>",
+"hash": "<new user hash>",
+}
+`

@@ -248,8 +248,35 @@ const main = () => {
         }
     })
 
+    app.put("/users/:id", (req, res) => {
+        if (validSessions.includes(req.sessionID)) {
+            let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
+            const query = `UPDATE USERS SET NAME="${req.body.name}", HASH="${newHash}" WHERE ID = ${req.params.id}`;
 
-    app.listen(8080, () => {
-        log(time(), "Server", 'API running at http://localhost:8000');
+            connection.query(query, (err, results) => {
+                if (err) {
+                    log(time(), req.body.name, 'Error executing query:' + err, true);
+                    res.status(500).send('Error modifying MySQL data');
+                    return;
+                }
+                res.send({
+                    id: req.params.id,
+                    name: req.body.name,
+                    hash: newHash
+                })
+                log(time(), req.body.name, 'Updated user details');
+            });
+        } else {
+            log(time(), session_user(req), 'Invalid session token', true);
+            if (req.session) {
+                req.session.destroy();
+            }
+            res.status(400).send({error: "Invalid session token"})
+        }
+    })
+
+    let port = 8080
+    app.listen(port, () => {
+        log(time(), "Server", `API running at http://localhost:${port}`);
     })
 }
