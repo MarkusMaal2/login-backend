@@ -3,6 +3,9 @@ const cors = require('cors');
 const { createHash } = require('crypto');
 const session = require("express-session");
 const app = express();
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
 
 
 const mysql = require('mysql2');
@@ -278,7 +281,21 @@ const main = () => {
     })
 
     let port = 8080
-    app.listen(port, () => {
-        log(time(), "Server", `API running at http://localhost:${port}`);
+
+    const privateKeyPath = path.join(__dirname, 'client-key.pem');
+    const certificatePath = path.join(__dirname, 'client-cert.pem');
+
+    const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+    const certificate = fs.readFileSync(certificatePath, 'utf8');
+
+    const credentials = { key: privateKey, cert: certificate };
+
+    log(time(), "Server", "SSL sertificates found and loaded")
+
+    const httpsServer = https.createServer(credentials, app);
+
+
+    httpsServer.listen(port, () => {
+        log(time(), "Server", `API running at https://localhost:${port}`);
     })
 }
