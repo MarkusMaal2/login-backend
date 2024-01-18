@@ -8,7 +8,7 @@ const path = require('path');
 const https = require('https');
 
 
-const mysql = require('mysql2');
+const mysql = require(`mysql-await`);
 
 const connection = mysql.createConnection({
     host: 'bdlcxot20d5o5e3kbaaf-mysql.services.clever-cloud.com',
@@ -166,7 +166,7 @@ const main = () => {
         }
     })
 
-    app.get("/notes/:userId", (req, res) => {
+    app.get("/notes/:userId", async (req, res) => {
         let searchUser = {};
         let searchIndex = 0;
         users.forEach((user) => {
@@ -186,17 +186,21 @@ const main = () => {
         }*/
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = `SELECT * FROM notes WHERE USER_ID = ${req.params.userId} ORDER BY (MODIFIED) DESC`;
-            connection.query(query, (err, results) => {
-                if (err) {
-                    console.log(query)
-                    log(time(), session_user(req), 'Error executing query: ' + err, true);
-                    res.status(500).end();
-                    return;
-                }
-                log(time(), session_user(req), 'Returning list of notes for user');
-                res.status(200).send(JSON.stringify(results))
-            });
+            const query = `SELECT *
+                           FROM notes
+                           WHERE USER_ID = ${req.params.userId}
+                           ORDER BY (MODIFIED) DESC`;
+            let results = await connection.awaitQuery(query);
+
+            /*if (err) {
+                console.log(query)
+                log(time(), session_user(req), 'Error executing query: ' + err, true);
+                res.status(500).end();
+                return;
+            }*/
+            log(time(), session_user(req), 'Returning list of notes for user');
+            connection.awaitEnd();
+            res.status(200).send(JSON.stringify(results))
         } else {
             //console.log("Invalid credentials");
             //console.log("ID: " + req.params.id);
@@ -413,6 +417,17 @@ const main = () => {
             res.status(400).send({error: "Invalid session token"})
         }
     })
+
+    app.use(session({
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+            secure: true,
+            httpOnly: false,
+            sameSite: 'none',
+            maxAge: 1000 * 60 * 10,
+        }
+    }))
 
     let port = process.env.PORT || 3001
     try {
