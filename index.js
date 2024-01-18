@@ -243,7 +243,6 @@ const main = () => {
             const query = `INSERT INTO notes (USER_ID, CONTENT) VALUES (${req.params.userId},"${req.body.content}")`;
             connection.query(query, (err, results) => {
                 if (err) {
-                    console.log(query)
                     log(time(), session_user(req), 'Error executing query: ' + err, true);
                     res.status(500).end();
                     return;
