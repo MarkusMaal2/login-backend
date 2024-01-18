@@ -284,16 +284,16 @@ const main = () => {
         let validId = validSessions.includes(req.sessionID);
         let noteContent = req.body.content.replaceAll("\"", "\\\"")
         if (validId) {
-            const query = `UPDATE notes SET CONTENT = "${noteContent}" WHERE id = ${req.params.noteId})`;
+            const query = `UPDATE notes SET CONTENT = "${noteContent}" WHERE id = ${req.params.noteId}`;
             connection.query(query, (err, results) => {
                 if (err) {
                     log(time(), session_user(req), 'Error executing query: ' + err, true);
                     res.status(500).end();
                     return;
                 }
-                let query = "SELECT * FROM notes WHERE USER_ID = " + req.params.userId + " ORDER BY (MODIFIED) DESC LIMIT 1";
+                let query = "SELECT * FROM notes WHERE id = " + req.params.noteId + " ORDER BY (MODIFIED) DESC LIMIT 1";
                 connection.query(query, (err, results) => {
-                    log(time(), session_user(req), 'Note added with ID of ' + results[0].id);
+                    log(time(), session_user(req), 'Note with ID of ' + results[0].id + ' was modified');
                     res.status(200).send(results[0])
                 })
             });
