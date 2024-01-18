@@ -427,7 +427,7 @@ const main = () => {
         secret: secret,
         resave: false,
         saveUninitialized: true,
-        rolling: false,
+        rolling: true,
         cookie: {
             secure: true,
             httpOnly: false,
