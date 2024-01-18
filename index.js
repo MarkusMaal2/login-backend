@@ -89,12 +89,17 @@ const main = () => {
     //console.log(users);
     log(time(), "Server", "Found " + String(users.length) + " users in the database");
     app.use(session({
-        secret: 'GJeoeJJASwww',
+        secret: secret,
         resave: false,
         saveUninitialized: true,
-        cookie: {secure: false, maxAge: 60 * 30 * 1000} // session limited to 30 minutes
+        rolling: true,
+        cookie: {
+            secure: true,
+            httpOnly: false,
+            sameSite: 'None',
+            maxAge: 1000 * 60 * 10,
+        }
     }))
-
     app.post('/login', (req, res) => {
         let returnUser = {};
         let allowLogin = false;
@@ -428,18 +433,6 @@ const main = () => {
     app.set('trust proxy', 1); // trust first proxy
 
 
-    app.use(session({
-        secret: secret,
-        resave: false,
-        saveUninitialized: true,
-        rolling: true,
-        cookie: {
-            secure: true,
-            httpOnly: false,
-            sameSite: 'none',
-            maxAge: 1000 * 60 * 10,
-        }
-    }))
 
     let port = process.env.PORT || 3001
     try {
