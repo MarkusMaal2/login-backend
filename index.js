@@ -59,7 +59,6 @@ const time = () => {
 }
 
 const session_user = (req) => {
-    console.log(req.session);
     return req.session?req.session.user?req.session.user.name:"Anonymous":"Anonymous";
 }
 
