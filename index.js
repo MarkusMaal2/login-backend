@@ -263,6 +263,49 @@ const main = () => {
         }
     })
 
+    app.put("/notes/:userId/:noteId", (req, res) => {
+        let searchUser = {};
+        let searchIndex = 0;
+        users.forEach((user) => {
+            if (user.id === req.params.id - 1) {
+                searchUser = user;
+            } else {
+                searchIndex++;
+            }
+        })
+        if (searchUser === {}) {
+            log(time(), session_user(req), 'Couldn\'t find user with ID of ' + req.params.id, true);
+            return res.status(404).send({error: "User not found"})
+        }
+        /*if (req.session.user.id !== req.params.userId) {
+            log(time(), session_user(req), 'Permission denied for viewing notes', true);
+            return res.status(403).send({error: "Access is denied"})
+        }*/
+        let validId = validSessions.includes(req.sessionID);
+        let noteContent = req.body.content.replaceAll("\"", "\\\"")
+        if (validId) {
+            const query = `UPDATE notes SET CONTENT = "${noteContent}" WHERE id = ${req.params.noteId})`;
+            connection.query(query, (err, results) => {
+                if (err) {
+                    log(time(), session_user(req), 'Error executing query: ' + err, true);
+                    res.status(500).end();
+                    return;
+                }
+                let query = "SELECT * FROM notes WHERE USER_ID = " + req.params.userId + " ORDER BY (MODIFIED) DESC LIMIT 1";
+                connection.query(query, (err, results) => {
+                    log(time(), session_user(req), 'Note added with ID of ' + results[0].id);
+                    res.status(200).send(results[0])
+                })
+            });
+        } else {
+            //console.log("Invalid credentials");
+            //console.log("ID: " + req.params.id);
+            //console.log("sessionID: " + req.sessionID);
+            log(time(), session_user(req), 'Invalid credentials for session ' + req.sessionID, true);
+            res.status(401).send({error: "Invalid credentials"})
+        }
+    })
+
     app.get('/users/:id', (req, res) => {
         if (typeof users[req.params.id - 1] === 'undefined') {
             log(time(), "Anonymous", "Couldn't find a user with ID of " + req.params.id, true);

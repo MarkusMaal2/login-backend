@@ -192,7 +192,33 @@ Request
 POST /notes/:userId
 
 {
-    "content": <note contents>
+"content": <note contents>
+}
+`
+
+Response
+`
+{
+"id": <new note ID>,
+"USER_ID": <user id for note>,
+"CONTENT": <new note content>,
+"CREATED": <note creation date/time>,
+"MODIFIED": <will be same as CREATED during this request>
+}
+`
+
+### 10. Update a note
+
+- **Endpoint:** `/notes/:userId/:noteId`
+- **Method:** `PUT`
+- **Description:** Allows you to replace an existing note with another one without creating a new one.
+
+Request
+`
+PUT /notes/:userId/:noteId
+
+{
+"content": <updated note contents>
 }
 `
 
