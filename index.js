@@ -17,6 +17,7 @@ const connection = mysql.createConnection({
     database: 'bdlcxot20d5o5e3kbaaf',
 });
 
+const secret = "ON!Yl64e')]t7*[sG`RL";
 connection.connect((err) => {
     if (err) {
         log(time(), "Server", 'Error connecting to MySQL:' + err, true);
@@ -26,7 +27,7 @@ connection.connect((err) => {
 });
 
 app.use(cors({
-    origin: ["http://localhost:3000", "https://localhost:3000", "http://maalmarkus.ikt.khk.ee", "https://maalmarkus.ikt.khk.ee", "https://login-frontend-klnmxcoj3-markusmaal2s-projects.vercel.app"],
+    origin: ["http://localhost:3000", "https://localhost:3000", "https://localhost:3001", "http://localhost:3001", "http://maalmarkus.ikt.khk.ee", "https://maalmarkus.ikt.khk.ee", "https://login-frontend-klnmxcoj3-markusmaal2s-projects.vercel.app"],
     credentials: true
 }));        // Avoid CORS errors in browsers
 app.use(express.json()) // Populate req.body
@@ -417,10 +418,16 @@ const main = () => {
             res.status(400).send({error: "Invalid session token"})
         }
     })
+    app.disable('x-powered-by');
+
+    app.set('trust proxy', 1); // trust first proxy
+
 
     app.use(session({
+        secret: secret,
         resave: false,
         saveUninitialized: true,
+        rolling: false,
         cookie: {
             secure: true,
             httpOnly: false,
