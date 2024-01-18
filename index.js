@@ -414,7 +414,7 @@ const main = () => {
         }
     })
 
-    let port = 80
+    let port = process.env.PORT || 3001
     try {
         const privateKeyPath = path.join(__dirname, 'client-key.pem');
         const certificatePath = path.join(__dirname, 'client-cert.pem');
