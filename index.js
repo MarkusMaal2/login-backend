@@ -59,6 +59,7 @@ const time = () => {
 }
 
 const session_user = (req) => {
+    console.log(req.session);
     return req.session?req.session.user?req.session.user.name:"Anonymous":"Anonymous";
 }
 
@@ -191,7 +192,14 @@ const main = () => {
                            FROM notes
                            WHERE USER_ID = ${req.params.userId}
                            ORDER BY (MODIFIED) DESC`;
-            let results = await connection.awaitQuery(query);
+            try {
+                let results = await connection.awaitQuery(query);
+                log(time(), session_user(req), 'Returning list of notes for user');
+                connection.awaitEnd();
+                res.status(200).send(JSON.stringify(results))
+            } catch (err) {
+                log(time(), session_user(req), "Access to notes is denied for " + session_user(req), true)
+            }
 
             /*if (err) {
                 console.log(query)
@@ -199,9 +207,6 @@ const main = () => {
                 res.status(500).end();
                 return;
             }*/
-            log(time(), session_user(req), 'Returning list of notes for user');
-            connection.awaitEnd();
-            res.status(200).send(JSON.stringify(results))
         } else {
             //console.log("Invalid credentials");
             //console.log("ID: " + req.params.id);
