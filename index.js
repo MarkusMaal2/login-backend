@@ -11,10 +11,10 @@ const https = require('https');
 const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'qwerty',
-    database: 'login_system',
+    host: 'bdlcxot20d5o5e3kbaaf-mysql.services.clever-cloud.com',
+    user: 'ux5actretttpohqf',
+    password: 'X6UJ23VfS7uudaL6Knws',
+    database: 'bdlcxot20d5o5e3kbaaf',
 });
 
 connection.connect((err) => {
@@ -38,7 +38,7 @@ const salt = "#ALLLL24"
 let users = [
 ]
 
-const query = 'SELECT * FROM USERS';
+const query = 'SELECT * FROM users';
 
 connection.query(query, (err, results) => {
     if (err) {
@@ -74,7 +74,7 @@ const log = (time, user, task, error = false) => {
 }
 
 const GetLatestNote = (connection, userId) => {
-    let query = "SELECT * FROM NOTES WHERE USER_ID = " + userId + " ORDER BY (CREATED) DESC LIMIT 1";
+    let query = "SELECT * FROM notes WHERE USER_ID = " + userId + " ORDER BY (CREATED) DESC LIMIT 1";
     return connection.query(query, (err, results) => {
         return results[0]
     })
@@ -146,7 +146,7 @@ const main = () => {
         }
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = `DELETE FROM NOTES WHERE ID = ${req.params.noteId} AND USER_ID = ${req.params.userId}`;
+            const query = `DELETE FROM notes WHERE ID = ${req.params.noteId} AND USER_ID = ${req.params.userId}`;
             connection.query(query, (err, results) => {
                 if (err) {
                     console.log(query)
@@ -186,7 +186,7 @@ const main = () => {
         }*/
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = `SELECT * FROM NOTES WHERE USER_ID = ${req.params.userId} ORDER BY (MODIFIED) DESC`;
+            const query = `SELECT * FROM notes WHERE USER_ID = ${req.params.userId} ORDER BY (MODIFIED) DESC`;
             connection.query(query, (err, results) => {
                 if (err) {
                     console.log(query)
@@ -226,7 +226,7 @@ const main = () => {
         }*/
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = `INSERT INTO NOTES (USER_ID, CONTENT) VALUES (${req.params.userId},"${req.body.content}")`;
+            const query = `INSERT INTO notes (USER_ID, CONTENT) VALUES (${req.params.userId},"${req.body.content}")`;
             connection.query(query, (err, results) => {
                 if (err) {
                     console.log(query)
@@ -234,7 +234,7 @@ const main = () => {
                     res.status(500).end();
                     return;
                 }
-                let query = "SELECT * FROM NOTES WHERE USER_ID = " + req.params.userId + " ORDER BY (MODIFIED) DESC LIMIT 1";
+                let query = "SELECT * FROM notes WHERE USER_ID = " + req.params.userId + " ORDER BY (MODIFIED) DESC LIMIT 1";
                 connection.query(query, (err, results) => {
                     log(time(), session_user(req), 'Note added with ID of ' + results[0].id);
                     res.status(200).send(results[0])
@@ -298,7 +298,7 @@ const main = () => {
             hash: newHash,
         })
         log(time(), req.body.name, 'Created user');
-        const query = `INSERT INTO USERS (NAME, HASH) VALUES ("${req.body.name}", "${newHash}")`;
+        const query = `INSERT INTO users (NAME, HASH) VALUES ("${req.body.name}", "${newHash}")`;
 
         connection.query(query, (err, results) => {
             if (err) {
@@ -327,7 +327,7 @@ const main = () => {
         }
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = 'DELETE FROM USERS WHERE id = ' + req.params.id;
+            const query = 'DELETE FROM users WHERE id = ' + req.params.id;
 
             connection.query(query, (err, results) => {
                 if (err) {
@@ -388,7 +388,7 @@ const main = () => {
     app.put("/users/:id", (req, res) => {
         if (validSessions.includes(req.sessionID)) {
             let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
-            const query = `UPDATE USERS SET NAME="${req.body.name}", HASH="${newHash}" WHERE ID = ${req.params.id}`;
+            const query = `UPDATE users SET NAME="${req.body.name}", HASH="${newHash}" WHERE ID = ${req.params.id}`;
 
             connection.query(query, (err, results) => {
                 if (err) {
@@ -415,21 +415,25 @@ const main = () => {
     })
 
     let port = 8080
+    try {
+        const privateKeyPath = path.join(__dirname, 'client-key.pem');
+        const certificatePath = path.join(__dirname, 'client-cert.pem');
 
-    const privateKeyPath = path.join(__dirname, 'client-key.pem');
-    const certificatePath = path.join(__dirname, 'client-cert.pem');
+        const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+        const certificate = fs.readFileSync(certificatePath, 'utf8');
 
-    const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-    const certificate = fs.readFileSync(certificatePath, 'utf8');
+        const credentials = {key: privateKey, cert: certificate};
 
-    const credentials = { key: privateKey, cert: certificate };
+        log(time(), "Server", "SSL certificates found and loaded")
 
-    log(time(), "Server", "SSL sertificates found and loaded")
+        const httpsServer = https.createServer(credentials, app);
 
-    const httpsServer = https.createServer(credentials, app);
-
-
-    httpsServer.listen(port, () => {
+        httpsServer.listen(port, () => {
+            log(time(), "Server", `API running at https://localhost:${port}`);
+        })
+    } catch (e) {
+        log(time(), "Server", "Failed to load SSL certificates, falling back to HTTP only mode", true)
+        app.listen(port);
         log(time(), "Server", `API running at https://localhost:${port}`);
-    })
+    }
 }
