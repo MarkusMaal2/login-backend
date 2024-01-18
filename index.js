@@ -26,7 +26,7 @@ connection.connect((err) => {
 });
 
 app.use(cors({
-    origin: ["http://localhost:3000", "https://localhost:3000", "http://maalmarkus.ikt.khk.ee", "https://maalmarkus.ikt.khk.ee"],
+    origin: ["http://localhost:3000", "https://localhost:3000", "http://maalmarkus.ikt.khk.ee", "https://maalmarkus.ikt.khk.ee", "https://login-frontend-klnmxcoj3-markusmaal2s-projects.vercel.app"],
     credentials: true
 }));        // Avoid CORS errors in browsers
 app.use(express.json()) // Populate req.body
