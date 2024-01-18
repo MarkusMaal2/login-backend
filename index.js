@@ -200,7 +200,6 @@ const main = () => {
             try {
                 let results = await connection.awaitQuery(query);
                 log(time(), session_user(req), 'Returning list of notes for user');
-                connection.awaitEnd();
                 res.status(200).send(JSON.stringify(results))
             } catch (err) {
                 log(time(), session_user(req), "Access to notes is denied for " + session_user(req), true)
