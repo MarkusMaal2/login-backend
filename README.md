@@ -142,3 +142,67 @@ Response
 "hash": "<new user hash>",
 }
 `
+
+### 7. Delete a note
+
+- **Endpoint:** `/notes/:userId/:noteId`
+- **Method:** `DELETE`
+- **Description:** Allows you to delete a note while logged in for the user specified.
+
+Request
+`
+DELETE /notes/:userId/:noteId
+`
+
+Response
+204: No content
+
+### 8. List notes
+
+- **Endpoint:** `/notes/:userId`
+- **Method:** `GET`
+- **Description:** Allows you to get contents of all notes while logged in for the user specified.
+
+Request
+`
+GET /notes/:userId
+`
+
+Response
+`
+[
+    {
+        "USER_ID": <user id>,
+        "CONTENT": <note content>,
+        "CREATED": <creation date/time>,
+        "MODIFIED": <modified date/time>,
+    },
+    ...
+]
+`
+
+### 9. Create a note
+
+- **Endpoint:** `/notes/:userId`
+- **Method:** `POST`
+- **Description:** Allows you to create a new note for the user specified while logged in.
+
+Request
+`
+POST /notes/:userId
+
+{
+    "content": <note contents>
+}
+`
+
+Response
+`
+{
+"id": <new note ID>,
+"USER_ID": <user id for note>,
+"CONTENT": <new note content>,
+"CREATED": <note creation date/time>,
+"MODIFIED": <will be same as CREATED during this request>
+}
+`
