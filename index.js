@@ -239,8 +239,9 @@ const main = () => {
             return res.status(403).send({error: "Access is denied"})
         }*/
         let validId = validSessions.includes(req.sessionID);
+        let noteContent = req.body.content.replaceAll("\"", "\\\"")
         if (validId) {
-            const query = `INSERT INTO notes (USER_ID, CONTENT) VALUES (${req.params.userId},"${req.body.content}")`;
+            const query = `INSERT INTO notes (USER_ID, CONTENT) VALUES (${req.params.userId},"${noteContent}")`;
             connection.query(query, (err, results) => {
                 if (err) {
                     log(time(), session_user(req), 'Error executing query: ' + err, true);
