@@ -383,7 +383,19 @@ const main = () => {
         }
         let validId = validSessions.includes(req.sessionID);
         if (validId) {
-            const query = 'DELETE FROM users WHERE id = ' + req.params.id;
+            let query = 'DELETE FROM notes WHERE USER_ID = ' + req.params.id;
+            connection.query(query, (err, results) => {
+                if (err) {
+                    log(time(), session_user(req), 'Error executing query: ' + err, true);
+                    res.status(500).end();
+                    return;
+                }
+                users.splice(searchIndex - 1, 1);
+                validSessions.splice(validSessions.indexOf(req.sessionID), 1)
+                log(time(), session_user(req), 'Deleted all notes for user');
+                res.status(204).end();
+            });
+            query = 'DELETE FROM users WHERE id = ' + req.params.id;
 
             connection.query(query, (err, results) => {
                 if (err) {
