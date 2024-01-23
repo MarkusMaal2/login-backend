@@ -1,5 +1,5 @@
-# Login system REST API
-Back-end for the login system, which allows to add/remove users, in addition to logging in and logging out.
+# Notes system REST API
+Back-end for the notes system, which allows to add/remove users, in addition to logging in, managing notes, and logging out.
 
 ## Base URL
 http://localhost:8080/
@@ -8,7 +8,7 @@ http://localhost:8080/
 [https://notes-backend-web.onrender.com](https://notes-backend-web.onrender.com)
 
 ## Authentication
-Every user is authenticated via a session token. A session token is created when a successful login request is made. See (#Endpoints)[Endpoints] for more details about logging in.
+Every user is authenticated via a session token. A session token is created when a successful login request is made. See [Endpoints](#Endpoints) for more details about logging in.
 
 ## Error handling
 The API returns standard HTTP status codes for success and error responses. Error responses include a JSON object with a `message` field providing details about the error.
