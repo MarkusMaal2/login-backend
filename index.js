@@ -4,9 +4,7 @@ const ca = require("./utils/ca");
 
 let port = process.env.PORT || 3001
 try {
-    const httpsServer = ca;
-
-    httpsServer.listen(port, () => {
+    ca.listen(port, () => {
         logger("Server", `API running at https://localhost:${port}`);
     })
 } catch (e) {
