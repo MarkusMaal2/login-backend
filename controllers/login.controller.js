@@ -1,9 +1,7 @@
 const LoginModel = require("../models/login.model")
-const app = require("../app")
 const {createHash} = require("crypto");
 const loginModel = new LoginModel();
 const logger = require("../utils/logger")
-const connection = require("../utils/db");
 const salt = "#ALLLL24"
 
 const session_user = (req) => {

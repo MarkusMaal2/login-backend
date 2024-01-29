@@ -1,7 +1,8 @@
+const { dirname } = require('path')
 
 const log = (user, task, error = false) => {
     const fs = require('fs')
-    const filePath = "./server.log"
+    const filePath = dirname(require.main.filename) + "/server.log"
     const time = new Date().toLocaleString()
     const content = "[" + time + "] " + user + " - " + task;
     fs.appendFile(filePath, content + "\n", (err) => {
