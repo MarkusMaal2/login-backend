@@ -1,7 +1,3 @@
-const NotesModel = require("../models/notes.model")
-const UsersModel = require("../models/login.model")
-const notesModel = new NotesModel();
-const usersModel = new UsersModel();
 const logger = require("../utils/logger")
 
 const session_user = (req) => {

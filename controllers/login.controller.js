@@ -1,11 +1,12 @@
-const LoginModel = require("../models/login.model")
 const {createHash} = require("crypto");
-const loginModel = new LoginModel();
 const logger = require("../utils/logger")
 const salt = "#ALLLL24"
 
+const sequelize = require("../utils/db")
+const models = require('../models')
+
 const session_user = (req) => {
-    return req.session?req.session.user?req.session.user.name:"Anonymous":"Anonymous";
+    return req.session?req.session.user?req.session.user.NAME:"Anonymous":"Anonymous";
 }
 
 const createUser = async(req, res, next) => {
@@ -14,7 +15,11 @@ const createUser = async(req, res, next) => {
         return res.status(400).send({error: 'One or all params are missing'})
     }
     let exists = false;
-    let findUser = await loginModel.findByName(req.body.name);
+    let findUser = await models.Users.findOne({
+        where: {
+            NAME: req.body.name
+        }
+    });
 
     if (findUser) {
         logger(findUser.NAME, "Tried to create account, but user already exists", true);
@@ -24,74 +29,76 @@ const createUser = async(req, res, next) => {
         return res.status(409).send({error: "The specified user already exists"});
     }
     let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
-    const newUser = {
-        name: req.body.name,
-        hash: newHash,
-    }
-    logger(req.body.name, 'Created user');
-    const userId = await loginModel.create(newUser)
-    const returnData = {
-        id: userId,
+    const newUser = models.Users.create({
         NAME: req.body.name,
         HASH: newHash,
-    }
-    res.status(200).send(returnData)
-    logger(req.body.name, 'User added to database');
+    }).then(user => {
+        logger(req.body.name, "User added to database")
+        res.status(200).json(user)
+    })
+    .catch (error =>{
+        logger(req.body.name, "Unable to create user", true)
+        res.status(500).json({error: error.message})
+    })
 }
 
 const deleteUser = async(req, res, next) => {
-    let foundUser = await loginModel.findById(req.params.id);
-    if (foundUser.length < 1) {
-        logger(session_user(req), 'Couldn\'t find user with ID of ' + req.params.id, true);
-        return res.status(404).send({error: "User not found"})
-    }
     try {
+        const uName = session_user(req);
         if ((Number(req.session.user.id) === Number(req.params.id))) {
-            let rows = await loginModel.delete(req.params.id);
-            if (rows > 0) {
-                logger(foundUser.NAME, 'Deleted user with Session ID of ' + req.sessionID);
-                req.session.destroy();
-                res.status(204).end();
-                return;
-            }
-            logger(session_user(req), 'Could not delete user with Session ID of ' + req.sessionID, true);
-            res.status(500).end();
+            models.Users.destroy({
+                where: {
+                    id: req.params.id
+                }
+            }).then((rows) => {
+                if (rows > 0) {
+                    logger(uName, "Deleted user with Session ID of " + req.sessionID)
+                    req.session.destroy();
+                    return res.status(204).end()
+                }
+                logger(uName, 'Couldn\'t find user with ID of ' + req.params.id, true);
+                return res.status(404).send({error: "User not found"})
+            }).catch (() => {
+                logger(uName, 'Could not delete user with Session ID of ' + req.sessionID, true);
+                res.status(500).end();
+            })
         } else {
-            logger(session_user(req), 'Invalid credentials for session ' + req.sessionID, true);
+            logger(uName, 'Invalid credentials for session ' + req.sessionID, true);
             res.status(401).send({error: "Invalid credentials"})
         }
     } catch (e) {
-        logger(session_user(req), 'Invalid credentials for session ' + req.sessionID, true);
+        logger(uName, 'Invalid credentials for session ' + req.sessionID, true);
         res.status(401).send({error: "Invalid credentials"})
     }
 }
 
 const loginUser = async(req, res, next) => {
-    let returnUser = {};
-    let allowLogin = false;
     if (req.body.password) {
         let passWord = req.body.password;
         let userName = req.body.name;
         let compHash = createHash('sha256').update(userName + salt + passWord).digest('hex')
-        const result = await loginModel.findByCredentials(userName, compHash);
-        if (result.length > 0) {
-            allowLogin = true;
-            returnUser = result[0];
-        }
-        console.log(result);
-    }
-    if (allowLogin) {
-        if (!req.session.user) {
-            req.session.user = returnUser;
-            logger(req.body.name, "Session started");
-            res.status(200).send({...returnUser, token: req.sessionID});
-        } else {
-            logger(req.body.name, "Cannot log in - session already active", true);
-            res.status(400).send({error: "The session is already active. Please log out to log in."})
-        }
-    } else {
-        if (!allowLogin) { logger(req.body.name, "Authentication failed", true); }
-        res.status(401).send({error: "Invalid credentials"})
+        models.Users.findOne({
+            where: {
+                NAME: userName,
+                HASH: compHash,
+            }
+        }).then (
+            user => {
+                if (!req.session.user) {
+                    req.session.user = user.dataValues;
+                    logger(req.body.name, "Session started");
+                    res.status(200).send({...user.dataValues, token: req.sessionID});
+                } else {
+                    logger(req.body.name, "Cannot log in - session already active", true);
+                    res.status(400).send({error: "The session is already active. Please log out to log in."})
+                }
+            }
+        ).catch (
+            () => {
+                logger(req.body.name, "Authentication failed", true);
+                res.status(401).send({error: "Invalid credentials"})
+            }
+        )
     }
 }
 
@@ -111,8 +118,22 @@ const logoutUser = async(req, res, next) => {
 const updateUser = async(req, res, next) => {
     if ((Number(req.session.user.id) === Number(req.params.id))) {
         let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
-        const rows = await loginModel.updateDetails(req.params.id, req.body.name, newHash)
-        res.status(200).send({name: req.body.name, password: req.body.password})
+        models.Users.update({
+            NAME: req.body.name,
+            HASH: newHash,
+        }, {
+            where: {id: req.params.id}
+        }).then(
+            rows => {
+                if (rows > 0) {
+                    logger(req.body.name, "Updated details for " + req.body.name);
+                    res.status(200).send({name: req.body.name, password: req.body.password})
+                } else {
+                    logger(req.body.name, "Couldn't update user details: user not found!", true);
+                    res.status(404).send({error: "User not found"});
+                }
+            }
+        )
     } else {
         logger(session_user(req), 'Invalid session token', true);
         if (req.session) {
@@ -133,29 +154,36 @@ const checkLogin = async(req, res, next) => {
 }
 
 const checkUser = async(req, res, next) => {
-    if (await loginModel.findById(req.params.id).length < 1) {
-        logger("Anonymous", "Couldn't find a user with ID of " + req.params.id, true);
-        return res.status(404).send({error: "User not found"})
-    }
-    if (req.body.password) {
-        let userName = users[req.params.id - 1].name;
-        let passWord = req.body.password;
-        let hash = users[req.params.id - 1].hash;
-        if (!req.session.user) {
-            req.session.user = users[req.params.id - 1];
-            logger(userName, "No valid session ID found, checking credentials");
-            if (createHash('sha256').update(userName + salt + passWord).digest('hex') !== hash) {
-                logger(userName, "Authentication failed");
-                res.status(401).send({error: "Invalid credentials"})
-                return;
-            }
+    models.Users.findOne({
+        where: {
+            id: req.params.id
         }
-        logger(userName, "User found");
-        res.send({...users[req.params.id - 1], token: req.sessionID})
-    } else {
-        logger(userName, "Missing credentials", true);
-        res.status(401).send({error: "Missing credentials"})
-    }
+    }).then(
+        user => {
+        if (req.body.password) {
+            let userName = user.NAME;
+            let passWord = req.body.password;
+            let hash = user.HASH;
+            if (!req.session.user) {
+                req.session.user = user;
+                logger(userName, "No valid session ID found, checking credentials");
+                if (createHash('sha256').update(userName + salt + passWord).digest('hex') !== hash) {
+                    logger(userName, "Authentication failed");
+                    res.status(401).send({error: "Invalid credentials"})
+                    return;
+                }
+            }
+            logger(userName, "User found");
+            res.send({...user, token: req.sessionID})
+        } else {
+            logger(userName, "Missing credentials", true);
+            res.status(401).send({error: "Missing credentials"})
+        }
+        }
+    ).catch(e => {
+        logger(session_user(req), "Error executing query: " + e.message, true);
+        return res.status(500).send({error: e.message});
+    })
 }
 
 module.exports = {createUser, deleteUser, loginUser, logoutUser, updateUser, checkLogin, checkUser}

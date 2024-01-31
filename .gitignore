@@ -2,3 +2,4 @@ node_modules
 .idea
 client-cert.pem
 client-key.pem
+server.log
