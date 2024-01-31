@@ -1,4 +1,4 @@
-# Notes system REST API (object-relation model branch)
+# Notes system REST API
 Back-end for the notes system, which allows to add/remove users, in addition to logging in, managing notes, and logging out.
 
 ## Base URL
