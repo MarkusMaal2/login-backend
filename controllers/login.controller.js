@@ -29,17 +29,17 @@ const createUser = async(req, res, next) => {
         return res.status(409).send({error: "The specified user already exists"});
     }
     let newHash = createHash('sha256').update(req.body.name + salt + req.body.password).digest('hex');
-    const newUser = models.Users.create({
+    models.Users.create({
         NAME: req.body.name,
         HASH: newHash,
     }).then(user => {
         logger(req.body.name, "User added to database")
         res.status(200).json(user)
     })
-    .catch (error =>{
-        logger(req.body.name, "Unable to create user", true)
-        res.status(500).json({error: error.message})
-    })
+        .catch (error =>{
+            logger(req.body.name, "Unable to create user", true)
+            res.status(500).json({error: error.message})
+        });
 }
 
 const deleteUser = async(req, res, next) => {
